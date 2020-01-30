@@ -10,7 +10,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import javax.print.Doc;
 import java.io.IOException;
 import java.util.*;
 
@@ -45,7 +44,7 @@ public class Main {
                     System.out.println(link);
                 }
                 HttpGet httpGet = new HttpGet(link);
-                httpGet.addHeader("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
+                httpGet.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
                 try (CloseableHttpResponse response1 = httpclient.execute(httpGet)) {
 
                     System.out.println(response1.getStatusLine());
@@ -70,8 +69,6 @@ public class Main {
                     }
                 }
                 processedLinkPool.add(link);
-            }else{
-
             }
         }
 
