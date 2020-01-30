@@ -30,13 +30,8 @@ public class Main {
             }
 
             if (IsInterestingLink(link)) {
-
                 Document doc = httpGetAndParseHtml(link);
-                ArrayList<Element> links = doc.select("a");
-                for (Element aTag : links
-                ) {
-                    linkPool.add(aTag.attr("href"));
-                }
+                doc.select("a").stream().map(aTag -> aTag.attr("href")).forEach(linkPool::add);
                 StoreItInDataBaseIfItIsNecessary(doc);
                 processedLinkPool.add(link);
             }
