@@ -100,10 +100,10 @@ public class Main {
                 String title = articleTags.get(0).child(0).text();
                 String content = articleTag.select("p").stream().map(Element::text).collect(Collectors.joining("\n"));
 
-                try (PreparedStatement statement = connection.prepareStatement("insert into news (title,url,content,created_at,modified_at) values(?,?,?,now(),now())")){
-                    statement.setString(1,title);
-                    statement.setString(2,link);
-                    statement.setString(3,content);
+                try (PreparedStatement statement = connection.prepareStatement("insert into news (title,url,content,created_at,modified_at) values(?,?,?,now(),now())")) {
+                    statement.setString(1, title);
+                    statement.setString(2, link);
+                    statement.setString(3, content);
                     statement.executeUpdate();
                 }
 
