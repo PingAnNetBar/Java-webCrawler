@@ -137,9 +137,4 @@ public class Main {
         return !link.contains("k=");
     }
 
-
-    private static int add(){
-       return 1+2;
-    }
-
 }
