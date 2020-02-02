@@ -15,38 +15,39 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
-
 @SuppressFBWarnings("DMI_CONSTANT_DB_PASSWORD")
 public class Main {
     public static void main(String[] args) throws IOException, SQLException {
 
         Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/news?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai", "root", "123456");
-        while (true) {
-
-            List<String> linkPool = getUrlFromDataBase(connection, "select link from LINKS_TO_BE_PROCESSED");
-            if (linkPool.isEmpty()) {
-                break;
-            }
-            String link = linkPool.remove(linkPool.size() - 1);
-            insertLinkIntoDataBase(connection, link, "delete from LINKS_TO_BE_PROCESSED where link = ?");
+        String link;
+        while ((link = getNextLinkThenDelete(connection)) != null) {
 
             if (isProcessed(connection, link)) {
                 continue;
             }
-
             if (IsInterestingLink(link)) {
                 Document doc = httpGetAndParseHtml(link);
                 findAllaTagAndStoreIntoDatabase(connection, doc);
                 StoreItInDataBaseIfItIsNecessary(doc);
-                insertLinkIntoDataBase(connection, link, "insert into LINKS_ALREADY_PROCESSED (link) values (?)");
+                updataDatabase(connection, link, "insert into LINKS_ALREADY_PROCESSED (link) values (?)");
             }
         }
     }
 
+    private static String getNextLinkThenDelete(Connection connection) throws SQLException {
+        String link = getNextLink(connection, "select link from LINKS_TO_BE_PROCESSED limit 1");
+        if (link != null) {
+            updataDatabase(connection, link, "delete from LINKS_TO_BE_PROCESSED where link = ?");
+        }
+        return link;
+    }
+
+
     private static void findAllaTagAndStoreIntoDatabase(Connection connection, Document doc) throws SQLException {
         for (Element aTag : doc.select("a")) {
             String href = aTag.attr("href");
-            insertLinkIntoDataBase(connection, href, "insert into LINKS_TO_BE_PROCESSED (link) values (?)");
+            updataDatabase(connection, href, "insert into LINKS_TO_BE_PROCESSED (link) values (?)");
         }
     }
 
@@ -59,29 +60,28 @@ public class Main {
             while (resultSet.next()) {
                 return true;
             }
-        }finally {
-            if (resultSet!=null){
+        } finally {
+            if (resultSet != null) {
                 resultSet.close();
             }
         }
         return false;
     }
 
-    private static void insertLinkIntoDataBase(Connection connection, String link, String sql) throws SQLException {
+    private static void updataDatabase(Connection connection, String link, String sql) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, link);
             statement.executeUpdate();
         }
     }
 
-    private static ArrayList<String> getUrlFromDataBase(Connection connection, String sql) throws SQLException {
-        ArrayList<String> result = new ArrayList<>();
+    private static String getNextLink(Connection connection, String sql) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(sql); ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
-                result.add(resultSet.getString(1));
+                return resultSet.getString(1);
             }
         }
-        return result;
+        return null;
     }
 
     private static void StoreItInDataBaseIfItIsNecessary(Document doc) {
@@ -135,6 +135,11 @@ public class Main {
 
     private static boolean IsNotIllegalPage(String link) {
         return !link.contains("k=");
+    }
+
+
+    private static int add(){
+       return 1+2;
     }
 
 }
