@@ -14,6 +14,7 @@ import org.jsoup.nodes.Element;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressFBWarnings("DMI_CONSTANT_DB_PASSWORD")
 public class Main {
@@ -29,7 +30,7 @@ public class Main {
             if (IsInterestingLink(link)) {
                 Document doc = httpGetAndParseHtml(link);
                 findAllaTagAndStoreIntoDatabase(connection, doc);
-                StoreItInDataBaseIfItIsNecessary(doc);
+                StoreItInDataBaseIfItIsNecessary(connection, doc, link);
                 updataDatabase(connection, link, "insert into LINKS_ALREADY_PROCESSED (link) values (?)");
             }
         }
@@ -47,7 +48,14 @@ public class Main {
     private static void findAllaTagAndStoreIntoDatabase(Connection connection, Document doc) throws SQLException {
         for (Element aTag : doc.select("a")) {
             String href = aTag.attr("href");
-            updataDatabase(connection, href, "insert into LINKS_TO_BE_PROCESSED (link) values (?)");
+
+            if (href.startsWith("//")) {
+                href = "https:" + href;
+            }
+
+            if (!href.toLowerCase().startsWith("javascript")) {
+                updataDatabase(connection, href, "insert into LINKS_TO_BE_PROCESSED (link) values (?)");
+            }
         }
     }
 
@@ -84,12 +92,21 @@ public class Main {
         return null;
     }
 
-    private static void StoreItInDataBaseIfItIsNecessary(Document doc) {
+    private static void StoreItInDataBaseIfItIsNecessary(Connection connection, Document doc, String link) throws SQLException {
         ArrayList<Element> articleTags = doc.select("article");
         if (!articleTags.isEmpty()) {
             for (Element articleTag : articleTags
             ) {
                 String title = articleTags.get(0).child(0).text();
+                String content = articleTag.select("p").stream().map(Element::text).collect(Collectors.joining("\n"));
+
+                try (PreparedStatement statement = connection.prepareStatement("insert into news (title,url,content,created_at,modified_at) values(?,?,?,now(),now())")){
+                    statement.setString(1,title);
+                    statement.setString(2,link);
+                    statement.setString(3,content);
+                    statement.executeUpdate();
+                }
+
                 System.out.println(title);
             }
         }
@@ -98,10 +115,7 @@ public class Main {
     private static Document httpGetAndParseHtml(String link) throws IOException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         System.out.println(link);
-        if (link.startsWith("//")) {
-            link = "https:" + link;
-            System.out.println(link);
-        }
+
         HttpGet httpGet = new HttpGet(link);
         httpGet.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
         try (CloseableHttpResponse response1 = httpclient.execute(httpGet)) {
@@ -114,7 +128,7 @@ public class Main {
     }
 
     private static boolean IsInterestingLink(String link) {
-        return IsSinaPage(link) && IsNotLoginPage(link) && IsNotIllegalPage(link) && IsNewPage(link) || IsEqualPage(link);
+        return (IsNewPage(link) || IsEqualPage(link)) && IsNotLoginPage(link) && IsNotIllegalPage(link);
     }
 
     private static boolean IsEqualPage(String link) {
