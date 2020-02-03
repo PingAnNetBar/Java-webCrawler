@@ -19,7 +19,8 @@ public class JdbcCrawlerDao implements CrawlerDao {
         }
     }
 
-    public String getNextLink(String sql) throws SQLException {
+    //getNextLink方法并不是所有实现都要需要遵守的协议，流程中并没有用到它，只是辅助getNextLinkThenDelete方法，故设置为JdbcCrawlerDao的private方法
+    private String getNextLink(String sql) throws SQLException {
         ResultSet resultSet = null;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             resultSet = statement.executeQuery();
@@ -33,7 +34,7 @@ public class JdbcCrawlerDao implements CrawlerDao {
         }
         return null;
     }
-
+    @Override
     public String getNextLinkThenDelete() throws SQLException {
         String link = getNextLink("select link from LINKS_TO_BE_PROCESSED limit 1");
         if (link != null) {
@@ -48,7 +49,7 @@ public class JdbcCrawlerDao implements CrawlerDao {
             statement.executeUpdate();
         }
     }
-
+    @Override
     public void insertNewsIntoDataBase(String title, String url, String content) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("insert into news (title,url,content,created_at,modified_at) values(?,?,?,now(),now())")) {
             statement.setString(1, title);
@@ -57,7 +58,7 @@ public class JdbcCrawlerDao implements CrawlerDao {
             statement.executeUpdate();
         }
     }
-
+    @Override
     public boolean isProcessed(String link) throws SQLException {
         ResultSet resultSet = null;
         try (PreparedStatement statement = connection.prepareStatement("select link from LINKS_ALREADY_PROCESSED where link = ?")) {
@@ -72,5 +73,15 @@ public class JdbcCrawlerDao implements CrawlerDao {
             }
         }
         return false;
+    }
+
+    @Override
+    public void insertLinkAlreadyProcessed(String link) {
+
+    }
+
+    @Override
+    public void insertLinkToBeProcessed(String href) {
+
     }
 }
