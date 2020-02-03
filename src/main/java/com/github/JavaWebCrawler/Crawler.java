@@ -16,29 +16,30 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-public class Crawler {
+public class Crawler extends Thread {
+    private CrawlerDao dao;
 
-    private CrawlerDao dao = new JdbcCrawlerDao();
-
-    public void run() throws SQLException, IOException {
-
-        String link;
-        while ((link = dao.getNextLinkThenDelete()) != null) {
-
-            if (dao.isProcessed(link)) {
-                continue;
-            }
-            if (IsInterestingLink(link)) {
-                Document doc = httpGetAndParseHtml(link);
-                findAllaTagAndStoreIntoDatabase(doc);
-                StoreItInDataBaseIfItIsNecessary(doc, link);
-                dao.updateDatabase(link, "insert into LINKS_ALREADY_PROCESSED (link) values (?)");
-            }
-        }
+    public Crawler(CrawlerDao dao) {
+        this.dao = dao;
     }
 
-    public static void main(String[] args) throws IOException, SQLException {
-        new Crawler().run();
+    public void run() {
+        try {
+            String link;
+            while ((link = dao.getNextLinkThenDelete()) != null) {
+                if (dao.isProcessed(link)) {
+                    continue;
+                }
+                if (IsInterestingLink(link)) {
+                    Document doc = httpGetAndParseHtml(link);
+                    findAllaTagAndStoreIntoDatabase(doc);
+                    StoreItInDataBaseIfItIsNecessary(doc, link);
+                    dao.insertLinkAlreadyProcessed(link);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void findAllaTagAndStoreIntoDatabase(Document doc) throws SQLException {
@@ -49,7 +50,7 @@ public class Crawler {
                 href = "https:" + href;
             }
             if (!href.toLowerCase().startsWith("javascript")) {
-                dao.updateDatabase(href, "insert into LINKS_TO_BE_PROCESSED (link) values (?)");
+                dao.insertLinkToBeProcessed(href);
             }
         }
     }
@@ -74,8 +75,6 @@ public class Crawler {
         HttpGet httpGet = new HttpGet(link);
         httpGet.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
         try (CloseableHttpResponse response1 = httpclient.execute(httpGet)) {
-
-            //System.out.println(response1.getStatusLine());
             HttpEntity entity1 = response1.getEntity();
             String html = EntityUtils.toString(entity1);
             return Jsoup.parse(html);

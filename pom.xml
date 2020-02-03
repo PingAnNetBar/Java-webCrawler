@@ -60,6 +60,12 @@
             <artifactId>annotations</artifactId>
             <version>3.0.0</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mybatis/mybatis -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.4.6</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -123,7 +129,7 @@
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>3.0</version>
                 <configuration>
-                    <url>jdbc:mysql://localhost:3306/news</url>
+                    <url>jdbc:mysql://localhost:3306/news?characterEncoding=utf-8</url>
                     <user>root</user>
                     <password>123456</password>
                 </configuration>
