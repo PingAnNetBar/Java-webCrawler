@@ -1,5 +1,6 @@
 package com.github.JavaWebCrawler;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -17,28 +18,29 @@ import java.util.stream.Collectors;
 
 
 public class Crawler {
-
-    private CrawlerDao dao = new JdbcCrawlerDao();
+    private CrawlerDao dao = new MyBatisCrawlerDao();
 
     public void run() throws SQLException, IOException {
 
-        String link;
-        while ((link = dao.getNextLinkThenDelete()) != null) {
+            String link;
 
-            if (dao.isProcessed(link)) {
-                continue;
+            while ((link = dao.getNextLinkThenDelete()) != null) {
+                if (dao.isProcessed(link)) {
+                    continue;
+                }
+                if (IsInterestingLink(link)) {
+                    Document doc = httpGetAndParseHtml(link);
+                    findAllaTagAndStoreIntoDatabase(doc);
+                    StoreItInDataBaseIfItIsNecessary(doc, link);
+                    dao.insertLinkAlreadyProcessed(link);
+                }
             }
-            if (IsInterestingLink(link)) {
-                Document doc = httpGetAndParseHtml(link);
-                findAllaTagAndStoreIntoDatabase(doc);
-                StoreItInDataBaseIfItIsNecessary(doc, link);
-                dao.updateDatabase(link, "insert into LINKS_ALREADY_PROCESSED (link) values (?)");
-            }
-        }
+
     }
-
+    @SuppressFBWarnings("DMI_CONSTANT_DB_PASSWORD")
     public static void main(String[] args) throws IOException, SQLException {
         new Crawler().run();
+        System.out.println("aaa");
     }
 
     private void findAllaTagAndStoreIntoDatabase(Document doc) throws SQLException {
@@ -49,7 +51,7 @@ public class Crawler {
                 href = "https:" + href;
             }
             if (!href.toLowerCase().startsWith("javascript")) {
-                dao.updateDatabase(href, "insert into LINKS_TO_BE_PROCESSED (link) values (?)");
+                dao.insertLinkToBeProcessed(href);
             }
         }
     }
