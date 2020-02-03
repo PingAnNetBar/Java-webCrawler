@@ -9,5 +9,5 @@ created_at timestamp default now()
 create table LINKS_TO_BE_PROCESSED (link varchar(1000));
 create table LINKS_ALREADY_PROCESSED (link varchar(1000));
 
---alter table links_to_be_processed convert to character set utf8;
---alter table links_already_processed convert to character set utf8;
+alter table links_to_be_processed convert to character set utf8;
+alter table links_already_processed convert to character set utf8;

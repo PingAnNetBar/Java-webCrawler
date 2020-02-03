@@ -1,6 +1,5 @@
 package com.github.JavaWebCrawler;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -17,13 +16,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-public class Crawler {
-    private CrawlerDao dao = new MyBatisCrawlerDao();
+public class Crawler extends Thread {
+    private CrawlerDao dao;
 
-    public void run() throws SQLException, IOException {
+    public Crawler(CrawlerDao dao) {
+        this.dao = dao;
+    }
 
+    public void run() {
+        try {
             String link;
-
             while ((link = dao.getNextLinkThenDelete()) != null) {
                 if (dao.isProcessed(link)) {
                     continue;
@@ -35,12 +37,9 @@ public class Crawler {
                     dao.insertLinkAlreadyProcessed(link);
                 }
             }
-
-    }
-    @SuppressFBWarnings("DMI_CONSTANT_DB_PASSWORD")
-    public static void main(String[] args) throws IOException, SQLException {
-        new Crawler().run();
-        System.out.println("aaa");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void findAllaTagAndStoreIntoDatabase(Document doc) throws SQLException {
@@ -76,8 +75,6 @@ public class Crawler {
         HttpGet httpGet = new HttpGet(link);
         httpGet.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36");
         try (CloseableHttpResponse response1 = httpclient.execute(httpGet)) {
-
-            //System.out.println(response1.getStatusLine());
             HttpEntity entity1 = response1.getEntity();
             String html = EntityUtils.toString(entity1);
             return Jsoup.parse(html);

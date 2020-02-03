@@ -24,8 +24,9 @@ public class MyBatisCrawlerDao implements CrawlerDao {
             throw new RuntimeException(e);
         }
     }
+
     @Override
-    public String getNextLinkThenDelete() throws SQLException {
+    public synchronized String getNextLinkThenDelete() throws SQLException {
         try (SqlSession session = sqlSessionFactory.openSession(true)) {
             String url = session.selectOne("com.github.JavaWebCrawler.MyMapper.selectNextAvailableLink");
             if (url != null) {
