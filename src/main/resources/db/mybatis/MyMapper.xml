@@ -14,8 +14,8 @@
     </delete>
     <insert
             id="insertNews" parameterType="com.github.JavaWebCrawler.News">
-        insert into News (title,url,content,created_at)
-        values(#{title},#{url},#{content},now())
+        insert into News (title,content,url,created_at)
+        values(#{title},#{content},#{url},now())
     </insert>
     <select id="countLink" parameterType="String" resultType="int">
         select count(link)
