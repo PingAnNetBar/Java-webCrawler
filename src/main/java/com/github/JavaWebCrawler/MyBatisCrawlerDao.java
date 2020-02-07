@@ -45,12 +45,16 @@ public class MyBatisCrawlerDao implements CrawlerDao {
     }
 
     @Override
-    public boolean isProcessed(String link) throws SQLException {
+    public synchronized boolean isDistincted(String title) throws SQLException {
         try (SqlSession session = sqlSessionFactory.openSession()) {
-            int flag = session.selectOne("com.github.JavaWebCrawler.MyMapper.countLink", link);
-            return flag != 0;
+            int count = session.selectOne("com.github.JavaWebCrawler.MyMapper.selectDistincted", title);
+            if (count>1){
+                return true;
+            }
         }
+        return false;
     }
+
 
     @Override
     public void insertLinkAlreadyProcessed(String link) {

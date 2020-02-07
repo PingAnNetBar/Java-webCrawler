@@ -1,6 +1,5 @@
 package com.github.JavaWebCrawler;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -29,13 +28,10 @@ public class Crawler extends Thread {
         try {
             String link;
             while ((link = dao.getNextLinkThenDelete()) != null) {
-//                if (dao.isProcessed(link)) {
-//                    continue;
-//                }
                 if (IsInterestingLink(link)) {
                     Document doc = httpGetAndParseHtml(link);
                     findAllaTagAndStoreIntoDatabase(doc);
-                    StoreItInDataBaseIfItIsNecessary(doc, link);
+                    storeItInDataBaseIfItIsNecessary(doc, link);
                     dao.insertLinkAlreadyProcessed(link);
                 }
             }
@@ -58,7 +54,7 @@ public class Crawler extends Thread {
     }
 
 
-    private void StoreItInDataBaseIfItIsNecessary(Document doc, String link) throws SQLException {
+    private void storeItInDataBaseIfItIsNecessary(Document doc, String link) throws SQLException {
 
         ArrayList<Element> articleTags = doc.select("article");
         if (!articleTags.isEmpty()) {
@@ -66,8 +62,8 @@ public class Crawler extends Thread {
             ) {
                 String title = articleTags.get(0).child(0).text();
                 System.out.println(title);
-                //let us use method to solve this problem first,then，bring it to the interface
-                if (isDistincted(title)) {
+
+                if (dao.isDistincted(title)) {
                     continue;
                 }
                 String content = articleTag.select("p").stream().map(Element::text).collect(Collectors.joining("\n"));
@@ -76,33 +72,6 @@ public class Crawler extends Thread {
         }
     }
 
-    @SuppressFBWarnings("DMI_CONSTANT_DB_PASSWORD")
-    private static boolean isDistincted(String title) throws SQLException {
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/news?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai", "root", "123456");
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            statement = connection.prepareStatement("select title from NEWS where title = ?");
-            statement.setString(1, title);
-            resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                return true;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (connection != null) {
-                connection.close();
-            }
-            if (statement != null) {
-                statement.close();
-            }
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        }
-        return false;
-    }
 
     private static Document httpGetAndParseHtml(String link) throws IOException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -118,28 +87,23 @@ public class Crawler extends Thread {
     }
 
     private static boolean IsInterestingLink(String link) {
-        return (IsNewPage(link) || IsEqualPage(link)) && IsNotLoginPage(link) && IsNotIllegalPage(link);
+        return (isNewPage(link) || isEqualPage(link)) && isNotLoginPage(link) && isNotIllegalPage(link);
     }
 
-    private static boolean IsEqualPage(String link) {
+    private static boolean isEqualPage(String link) {
         return "https://sina.cn".equals(link);
     }
 
-    private static boolean IsNewPage(String link) {
-        return link.contains("news.sina.cn") /*|| link.contains("nba.sina.cn")*/;
+    private static boolean isNewPage(String link) {
+        return link.contains("news.sina.cn");
     }
 
-    private static boolean IsSinaPage(String link) {
-        return link.contains("sina.cn");
-    }
-
-    private static boolean IsNotLoginPage(String link) {
+    private static boolean isNotLoginPage(String link) {
         return !link.contains("passport.sina.cn");
     }
 
-    private static boolean IsNotIllegalPage(String link) {
+    private static boolean isNotIllegalPage(String link) {
         return !link.contains("k=");
     }
-
 
 }

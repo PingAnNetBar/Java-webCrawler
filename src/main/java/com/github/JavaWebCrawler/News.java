@@ -1,16 +1,25 @@
 package com.github.JavaWebCrawler;
 
+import java.time.Instant;
+
 public class News {
+
+
     private Integer id;
     private String title;
     private String content;
     private String url;
+    private Instant createdAt;
+
+    public News() {
+    }
 
     public News(String title, String content, String url) {
         this.title = title;
         this.content = content;
         this.url = url;
     }
+
 
     public Integer getId() {
         return id;
@@ -42,6 +51,14 @@ public class News {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 
 }
