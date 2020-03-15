@@ -85,25 +85,23 @@ public class Crawler extends Thread {
             return Jsoup.parse(html);
         }
     }
-
-    private static boolean IsInterestingLink(String link) {
+    public static boolean IsInterestingLink(String link) {
         return (isNewPage(link) || isEqualPage(link)) && isNotLoginPage(link) && isNotIllegalPage(link);
     }
 
-    private static boolean isEqualPage(String link) {
+    public static boolean isEqualPage(String link) {
         return "https://sina.cn".equals(link);
     }
 
-    private static boolean isNewPage(String link) {
+    public static boolean isNewPage(String link) {
         return link.contains("news.sina.cn");
     }
 
-    private static boolean isNotLoginPage(String link) {
+    public static boolean isNotLoginPage(String link) {
         return !link.contains("passport.sina.cn");
     }
 
-    private static boolean isNotIllegalPage(String link) {
+    public static boolean isNotIllegalPage(String link) {
         return !link.contains("k=");
     }
-
 }
