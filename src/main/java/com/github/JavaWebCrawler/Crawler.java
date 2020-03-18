@@ -28,7 +28,7 @@ public class Crawler extends Thread {
         try {
             String link;
             while ((link = dao.getNextLinkThenDelete()) != null) {
-                if (IsInterestingLink(link)) {
+                if (Filter.IsInterestingLink(link)) {
                     Document doc = httpGetAndParseHtml(link);
                     findAllaTagAndStoreIntoDatabase(doc);
                     storeItInDataBaseIfItIsNecessary(doc, link);
@@ -86,24 +86,6 @@ public class Crawler extends Thread {
         }
     }
 
-    private static boolean IsInterestingLink(String link) {
-        return (isNewPage(link) || isEqualPage(link)) && isNotLoginPage(link) && isNotIllegalPage(link);
-    }
 
-    private static boolean isEqualPage(String link) {
-        return "https://sina.cn".equals(link);
-    }
-
-    private static boolean isNewPage(String link) {
-        return link.contains("news.sina.cn");
-    }
-
-    private static boolean isNotLoginPage(String link) {
-        return !link.contains("passport.sina.cn");
-    }
-
-    private static boolean isNotIllegalPage(String link) {
-        return !link.contains("k=");
-    }
 
 }
