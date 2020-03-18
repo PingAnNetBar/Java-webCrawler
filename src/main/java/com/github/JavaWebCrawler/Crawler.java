@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 
 public class Crawler extends Thread {
+
     private CrawlerDao dao;
 
     public Crawler(CrawlerDao dao) {
@@ -27,13 +28,10 @@ public class Crawler extends Thread {
         try {
             String link;
             while ((link = dao.getNextLinkThenDelete()) != null) {
-                if (dao.isProcessed(link)) {
-                    continue;
-                }
-                if (IsInterestingLink(link)) {
+                if (Filter.IsInterestingLink(link)) {
                     Document doc = httpGetAndParseHtml(link);
                     findAllaTagAndStoreIntoDatabase(doc);
-                    StoreItInDataBaseIfItIsNecessary(doc, link);
+                    storeItInDataBaseIfItIsNecessary(doc, link);
                     dao.insertLinkAlreadyProcessed(link);
                 }
             }
@@ -56,17 +54,24 @@ public class Crawler extends Thread {
     }
 
 
-    private void StoreItInDataBaseIfItIsNecessary(Document doc, String link) throws SQLException {
+    private void storeItInDataBaseIfItIsNecessary(Document doc, String link) throws SQLException {
+
         ArrayList<Element> articleTags = doc.select("article");
         if (!articleTags.isEmpty()) {
             for (Element articleTag : articleTags
             ) {
                 String title = articleTags.get(0).child(0).text();
+                System.out.println(title);
+
+                if (dao.isDistincted(title)) {
+                    continue;
+                }
                 String content = articleTag.select("p").stream().map(Element::text).collect(Collectors.joining("\n"));
                 dao.insertNewsIntoDataBase(title, link, content);
             }
         }
     }
+
 
     private static Document httpGetAndParseHtml(String link) throws IOException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
@@ -81,28 +86,6 @@ public class Crawler extends Thread {
         }
     }
 
-    private static boolean IsInterestingLink(String link) {
-        return (IsNewPage(link) || IsEqualPage(link)) && IsNotLoginPage(link) && IsNotIllegalPage(link);
-    }
 
-    private static boolean IsEqualPage(String link) {
-        return "https://sina.cn".equals(link);
-    }
-
-    private static boolean IsNewPage(String link) {
-        return link.contains("news.sina.cn");
-    }
-
-    private static boolean IsSinaPage(String link) {
-        return link.contains("sina.cn");
-    }
-
-    private static boolean IsNotLoginPage(String link) {
-        return !link.contains("passport.sina.cn");
-    }
-
-    private static boolean IsNotIllegalPage(String link) {
-        return !link.contains("k=");
-    }
 
 }

@@ -4,6 +4,12 @@
 # Target
 /target/
 
+# MysqlData
+/Mysqldata/
+
+# esData
+/esData/
+
 # Log file
 *.log
 
